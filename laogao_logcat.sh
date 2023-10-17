@@ -37,7 +37,7 @@ func_device(){
 	if [ $length -gt 2 ]
 	then
 		connect_device=${array[1]}
-		echo "connect_device  $connect_device \n"	
+		echo "\n当前连接的设备是  < $connect_device >\n"	
 		
 	else
 		echo "no devices connected"
@@ -56,7 +56,7 @@ func(){
 }
 
 # 参数-n的作用是不换行，echo默认换行
-echo  "输入抓取时间 秒，不输入回车，默认15秒:"    
+echo  "输入抓取logcat的时间多少秒，不输入回车，默认15秒:"    
 # 把键盘输入放入变量               
 read  sleepTime  
 echo  "输入抓取 $sleepTime" 
@@ -70,23 +70,27 @@ func & sleep $sleepTime
 adb -s $connect_device shell killall -2 logcat
 
 # 打开对应的app
-open -a "sublime text" $file_path
+open -a "sublime text" "$file_path"
 
-echo "\nAgain Enter 过滤规则 使用 | 分离,如 14532|flutter:"
+echo "\nAgain Enter 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
 while  read filter_name ; do
 	#statements
 
     output_name=$filter_name
 	
-
+	if [ "$output_name" == "e" ] || [ "$output_name" == "exit"  ]; then
+		echo "已经退出当前脚本"
+   		exit
+	fi
+	
 	echo "output_name= $output_name"
 	output_name2=`echo $output_name | sed 's/[^a-zA-Z0-9.]//g'`
 	echo "output_name2= $output_name2"
 	egrep -i "($filter_name)" $file_path > ${file_path%/*}/$output_name2
 	# 抽离字符串（将/ 前的str全部保留） {file_path%/*}
 	# 打开对应的app
-	open -a "sublime text" ${file_path%/*}/$output_name2
-	echo "Again Enter 过滤规则 使用 | 分离,如 14532|flutter:"
+	open -a "sublime text" "${file_path%/*}/$output_name2"
+	echo "Again Enter 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
 done
 
 

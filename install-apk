@@ -40,5 +40,5 @@ else
 fi
 
 echo "$final_file_path" > _install-apk_pre_info
-adb -s $connect_device install -r -t -d $final_file_path
+adb -s $connect_device install -r -t -d "$final_file_path"
 echo
