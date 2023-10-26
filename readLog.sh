@@ -27,6 +27,12 @@ while  read filter_name ; do
 		echo "已经退出当前脚本"
    		exit
 	fi
+	# 打开当前文件所在的文件夹
+	if [[ "$output_name" == "open" ]] || [[ "$output_name" == "o" ]]; then
+   		open $(dirname "$file_path")
+   		echo "请输入内容"
+   		continue
+	fi
 
     # 判断用户输入的字符串是否为空
 	if [ -z "$output_name" ]; then

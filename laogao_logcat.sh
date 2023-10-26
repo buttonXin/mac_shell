@@ -45,8 +45,21 @@ func_device(){
 }
 func_device
 
+# 获取当前文件的路径
+current_file_path="$(readlink -f "$0")"
 
-file_path=~/capture-log-file/log_$(date +%Y%m%d_%H%M%S).log
+# 使用dirname命令获取文件夹路径
+folder_path=$(dirname "$file_path")
+
+
+# 检查文件夹是否存在
+if [ ! -d "$folder_path/capture-log-file" ]; then
+    echo "capture-log-file文件夹不存在，将创建它"
+    mkdir "$folder_path/capture-log-file"
+fi
+
+
+file_path=${folder_path}/capture-log-file/log_$(date +%Y%m%d_%H%M%S).log
 
 func(){
 	echo "start load $connect_device logcat 
@@ -70,6 +83,7 @@ func & sleep $sleepTime
 adb -s $connect_device shell killall -2 logcat
 
 # 打开对应的app
+echo "抓取的文件路径: $file_path"
 open -a "sublime text" "$file_path"
 
 echo "\nAgain Enter 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
@@ -81,6 +95,19 @@ while  read filter_name ; do
 	if [ "$output_name" == "e" ] || [ "$output_name" == "exit"  ]; then
 		echo "已经退出当前脚本"
    		exit
+	fi
+	
+	# 打开当前文件所在的文件夹
+	if [[ "$output_name" == "open" ]] || [[ "$output_name" == "o" ]]; then
+   		open $(dirname "$file_path")
+   		echo "请输入内容"
+   		continue
+	fi
+
+	# 判断用户输入的字符串是否为空
+	if [ -z "$output_name" ]; then
+	    echo "请输入内容"
+	    continue
 	fi
 	
 	echo "output_name= $output_name"
