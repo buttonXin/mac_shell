@@ -52,14 +52,20 @@ current_file_path="$(readlink -f "$0")"
 folder_path=$(dirname "$file_path")
 
 
-# 检查文件夹是否存在
+# 检查文件夹是否存在,并创建
 if [ ! -d "$folder_path/capture-log-file" ]; then
     echo "capture-log-file文件夹不存在，将创建它"
     mkdir "$folder_path/capture-log-file"
 fi
 
+# 检查文件夹是否存在 ,进行删除
+if [  -d "$folder_path/capture-log-file/temp_log" ]; then
+    echo "capture-log-file/temp_log 文件夹存在，将删除"
+    rm -r "$folder_path/capture-log-file/temp_log"
+fi
 
-file_path=${folder_path}/capture-log-file/log_$(date +%Y%m%d_%H%M%S).log
+logcat_name=log_$(date +%Y%m%d_%H%M%S).log
+file_path="$folder_path/capture-log-file/$logcat_name"
 
 func(){
 	echo "start load $connect_device logcat 
@@ -73,8 +79,14 @@ echo  "输入抓取logcat的时间多少秒，不输入回车，默认15秒:"
 # 把键盘输入放入变量               
 read  sleepTime  
 echo  "输入抓取 $sleepTime" 
+
+if [ "$sleepTime" == "e" ] || [ "$sleepTime" == "exit"  ]; then
+	echo "已经退出当前脚本"
+  	exit
+fi
+
 if [[ $sleepTime -eq 0 ]]; then
-	sleepTime=15
+	sleepTime=5
 fi
  
 func & sleep $sleepTime
@@ -99,7 +111,16 @@ while  read filter_name ; do
 	
 	# 打开当前文件所在的文件夹
 	if [[ "$output_name" == "open" ]] || [[ "$output_name" == "o" ]]; then
-   		open $(dirname "$file_path")
+		# 检查文件夹是否存在 ,进行删除
+		if [ ! -d "$folder_path/capture-log-file/temp_log" ]; then
+    		echo "capture-log-file/temp_log 文件夹不存在，将创建"
+    		mkdir "$folder_path/capture-log-file/temp_log"
+		fi
+
+		# 复制当前文件到 "log-file" 文件夹下
+		cp "$file_path" "$folder_path/capture-log-file/temp_log/"
+
+   		open $(dirname "$folder_path/capture-log-file/temp_log/$logcat_name")
    		echo "请输入内容"
    		continue
 	fi
