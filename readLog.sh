@@ -3,23 +3,29 @@
 # 参数-n的作用是不换行，echo默认换行
 echo "将文件拖入命令行后回车:"    
 # 把键盘输入放入变量               
-read  file_path    
+read -e file_path    
 
 only_path=true 
 
-egrep -i "(nebula_)" $file_path > ${file_path%/*}/nebula_
+egrep -i "(LogControl)" $file_path > ${file_path%/*}/LogControl
 # 抽离字符串（将/ 前的str全部保留） {file_path%/*}
 # 打开对应的app
-open -a "sublime text" "${file_path%/*}/nebula_"
-open -a "sublime text" "$file_path"
+open -a "Visual Studio Code" "${file_path%/*}/LogControl"
+open -a "Visual Studio Code" "$file_path"
+
+# 使用dirname命令获取文件夹路径
+folder_path=$(dirname "$file_path")
+
+# 检查文件夹是否存在 ,进行删除
+if [  -d "$folder_path/temp_log" ]; then
+    # echo "temp_log 文件夹存在，将删除"
+    rm -r "$folder_path/temp_log"
+fi
+
 
 echo  "重新输入内容,过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
-while  read filter_name ; do
+while  read -e filter_name ; do
 	
-	if ($only_path); then
-   		open -a "sublime text" "$file_path"
-	fi
-
 	only_path=false
     output_name=$filter_name
 
@@ -27,9 +33,25 @@ while  read filter_name ; do
 		echo "已经退出当前脚本"
    		exit
 	fi
+
+	if ($only_path); then
+   		open -a "Visual Studio Code" "$file_path"
+	fi
+
 	# 打开当前文件所在的文件夹
 	if [[ "$output_name" == "open" ]] || [[ "$output_name" == "o" ]]; then
-   		open $(dirname "$file_path")
+		# 检查文件夹是否存在 ,进行删除
+		if [ ! -d "$folder_path/temp_log" ]; then
+    		echo "temp_log 文件夹不存在，将创建"
+    		mkdir "$folder_path/temp_log"
+		fi
+
+		# 复制当前文件到 "log-file" 文件夹下
+		cp "$file_path" "$folder_path/temp_log/"
+
+   		open $(dirname "$folder_path/temp_log/$output_name")
+
+   		# open $(dirname "$file_path")
    		echo "请输入内容"
    		continue
 	fi
@@ -49,7 +71,7 @@ while  read filter_name ; do
 	egrep -i "($filter_name)" $file_path > ${file_path%/*}/$output_name2
 	# 抽离字符串（将/ 前的str全部保留） {file_path%/*}
 	# 打开对应的app
-	open -a "sublime text" "${file_path%/*}/$output_name2"
+	open -a "Visual Studio Code" "${file_path%/*}/$output_name2"
 	echo  "重新输入内容, 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
 	
 done

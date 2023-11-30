@@ -75,9 +75,9 @@ func(){
 }
 
 # 参数-n的作用是不换行，echo默认换行
-echo  "输入抓取logcat的时间多少秒，不输入回车，默认15秒:"    
+echo  "输入抓取logcat的时间多少秒，不输入回车，默认5秒:"    
 # 把键盘输入放入变量               
-read  sleepTime  
+read  -e sleepTime  
 echo  "输入抓取 $sleepTime" 
 
 if [ "$sleepTime" == "e" ] || [ "$sleepTime" == "exit"  ]; then
@@ -96,10 +96,10 @@ adb -s $connect_device shell killall -2 logcat
 
 # 打开对应的app
 echo "抓取的文件路径: $file_path"
-open -a "sublime text" "$file_path"
+open -a "Visual Studio Code" "$file_path"
 
 echo "\nAgain Enter 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
-while  read filter_name ; do
+while  read -e filter_name ; do
 	#statements
 
     output_name=$filter_name
@@ -137,7 +137,7 @@ while  read filter_name ; do
 	egrep -i "($filter_name)" $file_path > ${file_path%/*}/$output_name2
 	# 抽离字符串（将/ 前的str全部保留） {file_path%/*}
 	# 打开对应的app
-	open -a "sublime text" "${file_path%/*}/$output_name2"
+	open -a "Visual Studio Code" "${file_path%/*}/$output_name2"
 	echo "Again Enter 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
 done
 

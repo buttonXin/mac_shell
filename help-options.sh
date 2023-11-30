@@ -13,7 +13,8 @@ func_device(){
 	if [ $length -gt 2 ]
 	then
 		connect_device=${array[1]}
-		echo "\n当前连接的设备是  < $connect_device >\n"	
+		current_brand_info=$(adb -s "$connect_device" shell getprop |egrep "(ro.product.name|ro.product.model|ro.product.brand|ro.boot.hardware]|market|ro.soc.model)")
+		echo "\n当前连接的设备是 < $connect_device >\n$current_brand_info\n"	
 		
 	else
 		connect_device=""
@@ -33,9 +34,10 @@ func_help_desc(){
 	-c 	:执行 adb logcat -c 
 	d 	:查看所有 display 的id;
 	-d	:执行 disconnect
-	i 	:执行 install-apk 脚本, 安装apk
+	i 	:执行 install-apk.sh 脚本, 安装apk
 	input xxx	:执行 adb shell input text/keyevent  ....
 	l 	:执行 laogao_logcat.sh 脚本,读取设备里的logcat并生成文件
+	n 	:打开一个新的 Terminal 窗口
 	o or open 	: 打开当前文件所在的文件夹
 	r 	:执行 readLog.sh 脚本, 读取Log文件并进行过滤;
 	s 	:执行 scrcpy 脚本
@@ -49,7 +51,7 @@ func_help_desc
 # read  curNum
 
 
-while  read -p "查看说明输入0,请输入:" curNum ; do
+while  read -e -p "查看说明输入0,请输入:" curNum ; do
 	func_device
 	if [ "$curNum" == "0" ]; then
    		func_help_desc
@@ -100,7 +102,7 @@ while  read -p "查看说明输入0,请输入:" curNum ; do
 	fi	
 
 	if [ "$curNum" == "i" ]; then
-   		sh ./install-apk
+   		sh ./install-apk.sh
    		echo
    		continue
 	fi
@@ -116,6 +118,13 @@ while  read -p "查看说明输入0,请输入:" curNum ; do
    		echo
    		continue
 	fi	
+
+	if [ "$curNum" == "n" ]; then
+   		echo 'tell application "Terminal" to do script "this is new Terminal"' > open_terminal.scpt
+		osascript open_terminal.scpt
+		rm open_terminal.scpt
+   		continue
+	fi
 
 	if [[ "$curNum" == *open* ]] || [[ "$curNum" == "o" ]]; then
    		open "$(dirname "$0")"

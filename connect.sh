@@ -35,6 +35,11 @@ for ip in "${ips[@]}"; do
     #     echo "Skipping even number: $ip"
     #     continue
     # fi
+
+    if [[ "$ip" == *.0.1* ]]; then
+        echo "Skipping even number: $ip"
+        continue
+    fi
     echo "current ip =$ip , start connect"
     adb connect $ip:5555
     echo
