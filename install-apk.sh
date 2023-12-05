@@ -141,8 +141,8 @@ function handle_key() {
         '')   # 回车键
             final_file_path=${input_list[$selected_index]}
             final_file_path_copy=${input_list_copy[$selected_index]}
-            echo "选择的文件名: $final_file_path"
-            echo "选择的文件名copy: $final_file_path_copy"
+            # echo "选择的文件名: $final_file_path"
+            # echo "选择的文件名copy: $final_file_path_copy"
             break;
             ;;
     esac
@@ -196,6 +196,7 @@ else
     echo "使用本地copy的路径:$final_file_path_copy"
 fi
 
+echo 
 
 adb -s $connect_device install -r -t -d "$install_apk"
 
