@@ -1,9 +1,35 @@
 # !/bin/bash                                 # 指定shell类型
 # 第三版
 # 参数-n的作用是不换行，echo默认换行
+
+# 获取当前文件的路径
+current_file_path=$(dirname $0)
+
 echo "将文件拖入命令行后回车:"    
 # 把键盘输入放入变量               
 read -e file_path    
+
+
+# 检查文件是否存在
+if [ ! -f "$file_path" ]; then
+    echo "文件${file_path} 不存在, 退出此次脚本"
+	exit
+fi
+
+file_format=$(file -I $file_path)
+
+# 获取传入文件的当前文件名称
+file_name=$(basename "$file_path")
+# 使用dirname命令获取传入文件的文件夹路径
+folder_path=$(dirname "$file_path")
+
+# 如果是utf-16le 的文件, 则转成 utf-8
+if [[ "$file_format" == *utf-16* ]]; then
+   	echo "需要转换文件: $file_format"
+   	iconv  -f UTF-16LE -t UTF-8 ${file_path} > "${folder_path}/conv-utf-8-${file_name}"
+   	file_path="${folder_path}/conv-utf-8-${file_name}"
+fi
+
 
 only_path=true 
 
@@ -22,8 +48,9 @@ if [  -d "$folder_path/temp_log" ]; then
     rm -r "$folder_path/temp_log"
 fi
 
+string_tips="输入内容,规则 使用 | 分离,如 14532|flutter ; e 退出; r 重新拖入文件."
 
-echo  "重新输入内容,过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
+echo  "$string_tips"
 while  read -e filter_name ; do
 	
 	only_path=false
@@ -31,6 +58,12 @@ while  read -e filter_name ; do
 
 	if [ "$output_name" == "e" ] || [ "$output_name" == "exit"  ]; then
 		echo "已经退出当前脚本"
+   		exit
+	fi
+
+	if [ "$output_name" == "r" ]; then
+   		sh $current_file_path/readLog.sh
+   		echo
    		exit
 	fi
 
@@ -52,13 +85,13 @@ while  read -e filter_name ; do
    		open $(dirname "$folder_path/temp_log/$output_name")
 
    		# open $(dirname "$file_path")
-   		echo "请输入内容"
+   		echo "$string_tips"
    		continue
 	fi
 
     # 判断用户输入的字符串是否为空
 	if [ -z "$output_name" ]; then
-	    echo  "不能输入空的内容.\n 重新输入内容, 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
+	    echo  "不能输入空的内容.\n"
 
 	    continue
 	else
@@ -72,7 +105,7 @@ while  read -e filter_name ; do
 	# 抽离字符串（将/ 前的str全部保留） {file_path%/*}
 	# 打开对应的app
 	open -a "Visual Studio Code" "${file_path%/*}/$output_name2"
-	echo  "重新输入内容, 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
+	echo  "$string_tips"
 	
 done
 

@@ -181,7 +181,7 @@ fi
 
 # 检查文件是否存在
 if [ ! -f "$final_file_path_copy" ]; then
-    echo "copy文件不存在: $final_file_path_copy"
+    # echo "copy文件不存在: $final_file_path_copy"
     # 检查文件是否存在
     if [ ! -f "$final_file_path" ]; then
         echo "文件不存在: $final_file_path"
@@ -247,7 +247,7 @@ if [ "${#input_list_origin_copy[@]}" -gt "$max_elements" ]; then
 
     # 打印集合中的内容,并进行删除
     for item in "${delete_apk_list[@]}"; do
-        echo "删除集合数据: $item"
+        # echo "删除集合数据: $item"
         rm -r $item
     done
 
