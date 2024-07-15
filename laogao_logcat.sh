@@ -69,10 +69,12 @@ file_path="$folder_path/capture-log-file/$logcat_name"
 
 func(){
 	echo "start load $connect_device logcat 
-		\nwait $sleepTime second or Longer ( command/ctrl + z ) auto open log \nwait\n"	
+		\nwait $sleepTime second or stop ( command + c ) auto open log \nwait\n"	
 
 	adb -s $connect_device shell logcat -v threadtime >> $file_path
 }
+
+trap "echo '检测到 SIGINT, 退出脚本'; exit 0" SIGINT
 
 # 参数-n的作用是不换行，echo默认换行
 echo  "输入抓取logcat的时间多少秒，不输入回车，默认5秒:"    
@@ -88,59 +90,77 @@ fi
 if [[ $sleepTime -eq 0 ]]; then
 	sleepTime=5
 fi
- 
-func & sleep $sleepTime
 
-# 将正常停止设备上所有正在运行的logcat进程。
-adb -s $connect_device shell killall -2 logcat
 
-# 打开对应的app
-echo "抓取的文件路径: $file_path"
-open -a "Visual Studio Code" "$file_path"
+# 定义一个处理函数，用于处理 捕获 SIGINT (Ctrl+C) 信号
+handle_sigint() {
+    echo "捕获到 SIGINT 信号(command + c)"
+    # 这里可以添加你希望执行的其他操作
+	handle_log_file
+}
 
-echo "\nAgain Enter 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
-while  read -e filter_name ; do
-	#statements
+# 使用 trap 命令捕获 SIGINT 信号，并指定处理函数
+trap handle_sigint SIGINT
 
-    output_name=$filter_name
+# 处理抓取的log文件
+handle_log_file(){
+
+	# 将正常停止设备上所有正在运行的logcat进程。
+	adb -s $connect_device shell killall -2 logcat
+
+	# 打开对应的app
+	echo "抓取的文件路径: $file_path"
+	open -a "Visual Studio Code" "$file_path"
+
+	trap "echo '检测到 SIGINT, 退出脚本'; exit 0" SIGINT
 	
-	if [ "$output_name" == "e" ] || [ "$output_name" == "exit"  ]; then
-		echo "已经退出当前脚本"
-   		exit
-	fi
-	
-	# 打开当前文件所在的文件夹
-	if [[ "$output_name" == "open" ]] || [[ "$output_name" == "o" ]]; then
-		# 检查文件夹是否存在 ,进行删除
-		if [ ! -d "$folder_path/capture-log-file/temp_log" ]; then
-    		echo "capture-log-file/temp_log 文件夹不存在，将创建"
-    		mkdir "$folder_path/capture-log-file/temp_log"
+	echo "\nAgain Enter 过滤规则 使用 | 分离,如 14532|flutter ; \n输入e / exit/ command + c 则退出当前脚本"
+	while  read -e filter_name ; do
+		#statements
+
+		output_name=$filter_name
+		
+		if [ "$output_name" == "e" ] || [ "$output_name" == "exit"  ]; then
+			echo "已经退出当前脚本"
+			exit
+		fi
+		
+		# 打开当前文件所在的文件夹
+		if [[ "$output_name" == "open" ]] || [[ "$output_name" == "o" ]]; then
+			# 检查文件夹是否存在 ,进行删除
+			if [ ! -d "$folder_path/capture-log-file/temp_log" ]; then
+				echo "capture-log-file/temp_log 文件夹不存在，将创建"
+				mkdir "$folder_path/capture-log-file/temp_log"
+			fi
+
+			# 复制当前文件到 "log-file" 文件夹下
+			cp "$file_path" "$folder_path/capture-log-file/temp_log/"
+
+			open $(dirname "$folder_path/capture-log-file/temp_log/$logcat_name")
+			echo "请输入内容"
+			continue
 		fi
 
-		# 复制当前文件到 "log-file" 文件夹下
-		cp "$file_path" "$folder_path/capture-log-file/temp_log/"
+		# 判断用户输入的字符串是否为空
+		if [ -z "$output_name" ]; then
+			echo "请输入内容"
+			continue
+		fi
+		
+		echo "output_name= $output_name"
+		output_name2=`echo $output_name | sed 's/[^a-zA-Z0-9.]//g'`
+		echo "output_name2= $output_name2"
+		egrep -i "($filter_name)" $file_path > ${file_path%/*}/$output_name2
+		# 抽离字符串（将/ 前的str全部保留） {file_path%/*}
+		# 打开对应的app
+		open -a "Visual Studio Code" "${file_path%/*}/$output_name2"
+		echo "Again Enter 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
+	done
+}
 
-   		open $(dirname "$folder_path/capture-log-file/temp_log/$logcat_name")
-   		echo "请输入内容"
-   		continue
-	fi
+func & sleep $sleepTime
 
-	# 判断用户输入的字符串是否为空
-	if [ -z "$output_name" ]; then
-	    echo "请输入内容"
-	    continue
-	fi
-	
-	echo "output_name= $output_name"
-	output_name2=`echo $output_name | sed 's/[^a-zA-Z0-9.]//g'`
-	echo "output_name2= $output_name2"
-	egrep -i "($filter_name)" $file_path > ${file_path%/*}/$output_name2
-	# 抽离字符串（将/ 前的str全部保留） {file_path%/*}
-	# 打开对应的app
-	open -a "Visual Studio Code" "${file_path%/*}/$output_name2"
-	echo "Again Enter 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
-done
-
+handle_log_file
 
 
 

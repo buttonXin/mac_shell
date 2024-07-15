@@ -79,10 +79,15 @@ done
 # for item in "${input_list_copy[@]}"; do
 #     echo "集合数据copy: $item"
 # done
+catch_ctrl_c(){
+    trap "echo '检测到 SIGINT, 退出脚本'; exit 0" SIGINT
+}
 
+
+catch_ctrl_c
 
 # 参数-n的作用是不换行，echo默认换行
-echo  "拖入文件 或 回车选择之前的文件路径:"    
+echo  "拖入文件 或 回车选择之前的文件路径 \n任何过程中执行 (command + c 停止当前脚本):"    
 # 把键盘输入放入变量               
 read  -e input_file_path    
 
@@ -155,12 +160,13 @@ if [[ -n "$input_file_path" ]];then
     final_file_path=$input_file_path
 else
     if [ "${#input_list[@]}" -eq 0 ]; then
-        echo "没有历史记录."
+        echo "没有历史记录. 退出本次安装. "
         exit
     
     else
         # 主循环
         while true; do
+            catch_ctrl_c
             display_menu
             handle_key
         done
@@ -197,6 +203,8 @@ else
 fi
 
 echo 
+
+catch_ctrl_c
 
 adb -s $connect_device install -r -t -d "$install_apk"
 

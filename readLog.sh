@@ -5,6 +5,12 @@
 # 获取当前文件的路径
 current_file_path=$(dirname $0)
 
+catch_ctrl_c(){
+    trap "echo '检测到 SIGINT, 退出脚本'; exit 0" SIGINT
+}
+
+catch_ctrl_c
+
 echo "将文件拖入命令行后回车:"    
 # 把键盘输入放入变量               
 read -e file_path    
@@ -33,10 +39,10 @@ fi
 
 only_path=true 
 
-egrep -i "(LogControl)" $file_path > ${file_path%/*}/LogControl
+egrep -i "(Myglasses)" $file_path > ${file_path%/*}/Myglasses
 # 抽离字符串（将/ 前的str全部保留） {file_path%/*}
 # 打开对应的app
-open -a "Visual Studio Code" "${file_path%/*}/LogControl"
+open -a "Visual Studio Code" "${file_path%/*}/Myglasses"
 open -a "Visual Studio Code" "$file_path"
 
 # 使用dirname命令获取文件夹路径
@@ -48,7 +54,7 @@ if [  -d "$folder_path/temp_log" ]; then
     rm -r "$folder_path/temp_log"
 fi
 
-string_tips="输入内容,规则 使用 | 分离,如 14532|flutter ; e 退出; r 重新拖入文件."
+string_tips="输入内容,规则 使用 | 分离,如 14532|flutter ;\n e 退出 / 任何过程中执行 (command + c 停止当前脚本); r 重新拖入文件."
 
 echo  "$string_tips"
 while  read -e filter_name ; do

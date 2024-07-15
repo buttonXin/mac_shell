@@ -35,6 +35,8 @@ func_help_desc(){
 	a 	:执行 apk-parse.sh 脚本, 打开解析apk的应用
 	am 	:adb启动应用的说明,启动到指定的display;
 	c 	:执行 connect.sh 脚本, 读取ifconfig连接设备
+	connect	:执行 adb connect的操作
+	clear	:执行 clear操作
 	-c 	:执行 adb logcat -c 
 	d 	:查看所有 display 的id; scrcpy --list-display ; scrcpy --display 476 显示对应的屏幕id
 	-d	:执行 disconnect
@@ -43,8 +45,11 @@ func_help_desc(){
 	l 	:执行 laogao_logcat.sh 脚本,读取设备里的logcat并生成文件
 	n 	:打开一个新的 Terminal 窗口
 	o or open 	: 打开当前文件所在的文件夹
+	p 	:新开窗口执行 getprop
 	r 	:执行 readLog.sh 脚本, 读取Log文件并进行过滤;
 	s 	:执行 scrcpy 脚本
+	top	:执行 adb shell top 在新的窗口.
+	v	:version 输入包名查看当前应用的versionCode和versionName
 	"""
 }
 
@@ -58,9 +63,21 @@ func_help_desc
 current_file_path=$(dirname $0)
 
 while  read -e -p "查看说明输入0,请输入:" curNum ; do
-	func_device
+
 	if [ "$curNum" == "0" ]; then
    		func_help_desc
+   		continue
+	fi
+
+	if [ "$curNum" == "clear" ]; then
+   		clear
+   		continue
+	fi
+
+	if [[ "$curNum" == *connect* ]]; then
+		# adb  connect "${curNum/connect/ }"
+		connect_result=$(adb $curNum)
+		echo $connect_result
    		continue
 	fi
 
@@ -82,22 +99,23 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
    		echo
    		continue
 	fi
-
-
-	# 下面的脚本需要连接设备才能执行
-	if [ ! $has_device ]; then
-   		continue
-	fi
-
+	
 	if [ "$curNum" == "a" ]; then
    		sh $current_file_path/apk-parse.sh
    		echo
    		continue
 	fi
 
+	func_device
+	# 下面的脚本需要连接设备才能执行
+	if [ "$has_device" == false ]; then
+   		continue
+	fi
+
 	if [ "$curNum" == "am" ]; then
    		echo  " adb shell am start -n ai.nreal.nebula.mainland/ai.nreal.nebula.MainActivity --display 157 可以指定到对应的display里" 
-   		# echo  " adb shell input keyevent 4 -d 157   在display id是 157 的屏幕执行返回键"
+   		echo  """ adb -d shell am broadcast -a com.xreal.EvaPro.SystemProperty -n ai.nreal.commonmodule/.receiver.SystemPropertyReceiver --es user_id_value "test_user-121221"
+					发送带参数的广播	 -es表示String类型  key是: user_id_value , value是: "test_user-121221" """
    		echo  
    		continue
 	fi
@@ -109,13 +127,7 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
 	fi
 
 	if [ "$curNum" == "-c" ]; then
-
-		if [ "$connect_device" == "" ]; then
-   			continue
-		fi
-
-   		adb -s "$connect_device" logcat -c
-   		echo
+   		echo "logcat -c end  $(adb -s "$connect_device" logcat -c)"
    		continue
 	fi
 
@@ -150,6 +162,14 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
    		continue
 	fi	
 
+	if [ "$curNum" == "p" ]; then
+   		echo 'tell application "Terminal" to do script "adb shell getprop | grep user"' > open_terminal.scpt
+		osascript open_terminal.scpt
+		rm open_terminal.scpt
+   		echo
+   		continue
+	fi	
+
 	if [ "$curNum" == "s" ]; then
    		echo 'tell application "Terminal" to do script "scrcpy"' > open_terminal.scpt
 		osascript open_terminal.scpt
@@ -158,7 +178,27 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
    		continue
 	fi
 
+	if [ "$curNum" == "top" ]; then
+   		echo 'tell application "Terminal" to do script "adb shell top "' > open_terminal.scpt
+		osascript open_terminal.scpt
+		rm open_terminal.scpt
+   		echo
+   		continue
+	fi
 
+	if [ "$curNum" == "v" ]; then
+		echo "请输入包名: 如 com.xreal.evapro.id.mainland "      
+		read -e pkg_name 
+		# 判断用户输入的字符串是否为空
+		if [ -z "$pkg_name" ]; then
+	    echo  "不能输入空的内容.\n"
+	    continue
+		fi
+
+   		adb -s "$connect_device" shell dumpsys package  "$pkg_name" | grep version
+   		echo
+   		continue
+	fi	
 
 
 done
