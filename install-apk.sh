@@ -84,12 +84,14 @@ catch_ctrl_c(){
 }
 
 
-catch_ctrl_c
+# catch_ctrl_c
 
 # 参数-n的作用是不换行，echo默认换行
-echo  "拖入文件 或 回车选择之前的文件路径 \n任何过程中执行 (command + c 停止当前脚本):"    
+echo  "拖入文件 或 回车选择之前的文件路径 ; 任何过程中执行 (command + c 停止当前脚本):"    
 # 把键盘输入放入变量               
 read  -e input_file_path    
+
+catch_ctrl_c
 
 
 func_device(){

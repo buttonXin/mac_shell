@@ -46,6 +46,7 @@ func_help_desc(){
 	n 	:打开一个新的 Terminal 窗口
 	o or open 	: 打开当前文件所在的文件夹
 	p 	:新开窗口执行 getprop
+	pid	:获取当前包名的所有进程号
 	r 	:执行 readLog.sh 脚本, 读取Log文件并进行过滤;
 	s 	:执行 scrcpy 脚本
 	top	:执行 adb shell top 在新的窗口.
@@ -132,8 +133,8 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
 	fi
 
 	if [ "$curNum" == "d" ]; then
-   		echo  " 所有display -->\n$(adb -s "$connect_device" shell dumpsys display | grep "  Display ")" 
-   		echo  "scrcpy info: $(scrcpy --list-display)"
+   		echo  " 所有display -->\n$(adb -s "$connect_device" shell dumpsys display | grep ", fps=")" 
+   		echo  "\nscrcpy info: $(scrcpy --list-display)"
    		echo
    		continue
 	fi
@@ -162,13 +163,24 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
    		continue
 	fi	
 
+
 	if [ "$curNum" == "p" ]; then
    		echo 'tell application "Terminal" to do script "adb shell getprop | grep user"' > open_terminal.scpt
 		osascript open_terminal.scpt
 		rm open_terminal.scpt
    		echo
    		continue
-	fi	
+	fi
+
+	if [ "$curNum" == "pid" ]; then
+		echo "请输入包名: 如 com.xreal.evapro.id.mainland "      
+		read -e pkg_name 
+		adb -s $connect_device shell ps | grep $pkg_name
+   		# PIDS=$(adb -s $connect_device shell ps | grep $pkg_name | awk '{print $2}')
+		# echo "PIDs for com.example.myapp: $PIDS"
+   		echo
+   		continue
+	fi		
 
 	if [ "$curNum" == "s" ]; then
    		echo 'tell application "Terminal" to do script "scrcpy"' > open_terminal.scpt
@@ -177,6 +189,14 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
    		echo
    		continue
 	fi
+
+	if [ "$curNum" == "ssh" ]; then
+   		echo 'tell application "Terminal" to do script "artosyn \n scp -r root@169.254.2.1:/usrdata/log ."' > open_terminal.scpt
+		osascript open_terminal.scpt
+		rm open_terminal.scpt
+   		echo
+   		continue
+	fi	
 
 	if [ "$curNum" == "top" ]; then
    		echo 'tell application "Terminal" to do script "adb shell top "' > open_terminal.scpt

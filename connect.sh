@@ -5,15 +5,16 @@ echo "-----start connect-----"
 adb devices
 
 
+
 func(){
     adb -d tcpip 5555
     adb disconnect
 }
+echo "wait connect "
 
-func & sleep 2
+#  这里需要sleep 4秒, 时间太短, func里的方法执行时,会导致下面的链接失败.
+func & sleep 4
 
-
-echo
 adb -d shell ifconfig 
 
 # ip="$(adb -d shell "ifconfig wlan0 | grep 192.168  | cut -c9- |
@@ -45,6 +46,10 @@ for ip in "${ips[@]}"; do
     echo
 done
 
+#  上面未连接的情况下 再次使用这个方式进行连接
+IP_ADDRESS=$(adb -d shell ip addr show wlan0 | grep "inet " | awk '{print $2}' | cut -d/ -f1)
+echo "The device IP address is: $IP_ADDRESS"
+adb connect $IP_ADDRESS:5555
 
 
 adb devices

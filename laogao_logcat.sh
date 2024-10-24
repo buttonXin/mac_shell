@@ -58,6 +58,24 @@ if [ ! -d "$folder_path/capture-log-file" ]; then
     mkdir "$folder_path/capture-log-file"
 fi
 
+# 判断文件夹是否大于1G ,大于就删除里面全部内容
+
+# 获取目录的大小（以字节为单位）
+# capture_log_size=$(du -sb "$folder_path/capture-log-file" | cut -f1)
+capture_log_size_kb=$(du -sk "$folder_path/capture-log-file" | cut -f1)
+capture_log_size=$((capture_log_size_kb * 1024))
+
+# 1G  = byte
+one_gb=1073741824
+# 判断目录大小是否大于1GB
+if [ "$capture_log_size" -gt "$one_gb" ]; then
+    echo "缓存文件大小超过 1 GB，将删除缓存文件的内容..."
+    rm -rf "$folder_path/capture-log-file"/*
+    echo "目录内容已删除。"
+fi
+
+
+
 # 检查文件夹是否存在 ,进行删除
 if [  -d "$folder_path/capture-log-file/temp_log" ]; then
     echo "capture-log-file/temp_log 文件夹存在，将删除"
