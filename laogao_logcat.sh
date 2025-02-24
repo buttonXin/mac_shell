@@ -17,7 +17,7 @@
 # 	if [ $length -gt 2 ]
 # 	then
 # 		connect_device=${array[1]}
-# 		echo "start load $connect_device logcat 
+# 		echo "start load logcat  device -->  $connect_device 
 # 		\nwait 8 second or Longer ( command/ctrl + z ) auto open log \nwait\n"	
 # 		adb -s $connect_device shell logcat -v threadtime >> $log_name
 # 	else
@@ -86,8 +86,8 @@ logcat_name=log_$(date +%Y%m%d_%H%M%S).log
 file_path="$folder_path/capture-log-file/$logcat_name"
 
 func(){
-	echo "start load $connect_device logcat 
-		\nwait $sleepTime second or stop ( command + c ) auto open log \nwait\n"	
+	echo "\nstart load logcat : device is --> $connect_device 
+		\nwait $sleepTime second or stop ( control + c ) auto open log"	
 
 	adb -s $connect_device shell logcat -v threadtime >> $file_path
 }
@@ -95,10 +95,11 @@ func(){
 trap "echo '检测到 SIGINT, 退出脚本'; exit 0" SIGINT
 
 # 参数-n的作用是不换行，echo默认换行
-echo  "输入抓取logcat的时间多少秒，不输入回车，默认5秒:"    
+echo  "输入抓取logcat的时间，默认500秒:"    
 # 把键盘输入放入变量               
-read  -e sleepTime  
-echo  "输入抓取 $sleepTime" 
+# read  -e sleepTime  
+# echo  "输入抓取 $sleepTime"
+sleepTime=500 
 
 if [ "$sleepTime" == "e" ] || [ "$sleepTime" == "exit"  ]; then
 	echo "已经退出当前脚本"
@@ -106,7 +107,7 @@ if [ "$sleepTime" == "e" ] || [ "$sleepTime" == "exit"  ]; then
 fi
 
 if [[ $sleepTime -eq 0 ]]; then
-	sleepTime=5
+	sleepTime=500
 fi
 
 
@@ -132,7 +133,7 @@ handle_log_file(){
 
 	trap "echo '检测到 SIGINT, 退出脚本'; exit 0" SIGINT
 	
-	echo "\nAgain Enter 过滤规则 使用 | 分离,如 14532|flutter ; \n输入e / exit/ command + c 则退出当前脚本"
+	echo "\nAgain Enter 过滤规则 使用 | 分离,如 14532|flutter ; \n输入 e / exit 则退出当前脚本"
 	while  read -e filter_name ; do
 		#statements
 
@@ -173,6 +174,7 @@ handle_log_file(){
 		# 打开对应的app
 		open -a "Visual Studio Code" "${file_path%/*}/$output_name2"
 		echo "Again Enter 过滤规则 使用 | 分离,如 14532|flutter ; 输入e / exit 则退出当前脚本"
+
 	done
 }
 

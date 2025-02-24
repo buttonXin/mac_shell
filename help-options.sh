@@ -14,7 +14,7 @@ func_device(){
 	if [ $length -gt 2 ]
 	then
 		connect_device=${array[1]}
-		current_brand_info=$(adb -s "$connect_device" shell getprop |egrep "(ro.product.name|ro.product.model|ro.product.brand|ro.boot.hardware]|market|ro.soc.model)")
+		current_brand_info=$(adb -s "$connect_device" shell getprop |egrep "(ro.product.name|ro.product.model|ro.product.brand|ro.boot.hardware]|market|ro.soc.model|ro.system.build.type)")
 		echo "\n设备信息:\n${current_brand_info}"
 		echo "\n当前连接的 device: $connect_device \n"	
 		
@@ -24,6 +24,8 @@ func_device(){
 		echo "请先连接设备"
 		has_device=false
 	fi
+	current_time=$(date "+%Y-%m-%d %H:%M:%S")
+	echo "Current time: $current_time"
 }
 func_device
 
@@ -40,21 +42,35 @@ func_help_desc(){
 	-c 	:执行 adb logcat -c 
 	d 	:查看所有 display 的id; scrcpy --list-display ; scrcpy --display 476 显示对应的屏幕id
 	-d	:执行 disconnect
+	getlog	:获取眼镜内的log文件
 	i 	:执行 install-apk.sh 脚本, 安装apk
 	input xxx	:执行 adb shell input text/keyevent  ....
 	l 	:执行 laogao_logcat.sh 脚本,读取设备里的logcat并生成文件
 	n 	:打开一个新的 Terminal 窗口
+	ncm	:打开眼镜的ncm网卡
 	o or open 	: 打开当前文件所在的文件夹
 	p 	:新开窗口执行 getprop
 	pid	:获取当前包名的所有进程号
 	r 	:执行 readLog.sh 脚本, 读取Log文件并进行过滤;
 	s 	:执行 scrcpy 脚本
+	sid	:执行 scrcpy 脚本 需要传入display对应的id , 不输入回车默认为0
+	sdk-global	:将sdk的trace日志push到myGlasses的应用中
 	top	:执行 adb shell top 在新的窗口.
 	v	:version 输入包名查看当前应用的versionCode和versionName
 	"""
 }
 
 func_help_desc
+
+mac_check_xreal_glasses(){
+	USB_DEVICES=$(system_profiler SPUSBDataType | grep "Vendor ID")
+
+	if echo "$USB_DEVICES" | grep -q "0x3318"; then
+        return 0  # true (找到设备)
+    else
+        return 1  # false (未找到设备)
+    fi
+}
 
 # echo  "输入数字:"    
 # # 把键盘输入放入变量               
@@ -89,6 +105,37 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
    		continue
 	fi
 
+	if [ "$curNum" == "ncm" ]; then
+		if mac_check_xreal_glasses; then
+			echo '打开网卡ncm/ecm'
+			chmod +x autoTest
+			autoTest get_usb_config
+			echo '上面是当前状态.'
+			echo '发送打开网卡: d3 55 10 00 00 '
+			autoTest sendmsg d3 55 10 00 00
+			# autoTest sendmsg d3 aa 10 00 00
+			sleep 3
+			autoTest get_usb_config 
+			echo '打开网卡ncm/ecm , 上面是状态'
+		else
+			echo '未插入眼镜'
+		fi	
+   		continue
+	fi
+
+	if [ "$curNum" == "getlog" ]; then
+		if mac_check_xreal_glasses; then
+			rm -rf "$current_file_path/log"
+			chmod +x autoTest
+			autoTest get_log 
+			echo 'log已经抓取,并打开usb log文件'
+			open $(dirname "$current_file_path/log/log.zip")
+		else
+			echo '未插入眼镜'
+		fi	
+   		continue
+	fi
+
 	if [[ "$curNum" == *open* ]] || [[ "$curNum" == "o" ]]; then
    		open "$(dirname "$0")"
    		echo
@@ -115,8 +162,7 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
 
 	if [ "$curNum" == "am" ]; then
    		echo  " adb shell am start -n ai.nreal.nebula.mainland/ai.nreal.nebula.MainActivity --display 157 可以指定到对应的display里" 
-   		echo  """ adb -d shell am broadcast -a com.xreal.EvaPro.SystemProperty -n ai.nreal.commonmodule/.receiver.SystemPropertyReceiver --es user_id_value "test_user-121221"
-					发送带参数的广播	 -es表示String类型  key是: user_id_value , value是: "test_user-121221" """
+   		echo  """ adb -d shell am broadcast -a com.xreal.EvaPro.SystemProperty -n ai.nreal.commonmodule/.receiver.SystemPropertyReceiver --es data_key \\\"data_value\\\" \n发送带参数的广播	 -es表示String类型  \\时 data_value 内可以使用空格 """
    		echo  
    		continue
 	fi
@@ -165,9 +211,11 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
 
 
 	if [ "$curNum" == "p" ]; then
-   		echo 'tell application "Terminal" to do script "adb shell getprop | grep user"' > open_terminal.scpt
-		osascript open_terminal.scpt
-		rm open_terminal.scpt
+   		osascript <<EOF
+tell application "Terminal"	
+		do script "adb -s $connect_device shell getprop | grep user"	
+end tell
+EOF
    		echo
    		continue
 	fi
@@ -190,18 +238,35 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
    		continue
 	fi
 
-	if [ "$curNum" == "ssh" ]; then
-   		echo 'tell application "Terminal" to do script "artosyn \n scp -r root@169.254.2.1:/usrdata/log ."' > open_terminal.scpt
-		osascript open_terminal.scpt
-		rm open_terminal.scpt
+	if [ "$curNum" == "sid" ]; then 
+		read -p "请输入display id (回车默认为0) :" display_id 
+		# 如果 display_id 为空，设置为默认值 0
+		if [ -z "$display_id" ]; then
+    		display_id=0
+		fi
+		# 每一行只能这样操作,否则命令行不识别次操作.
+   		osascript <<EOF
+tell application "Terminal"	
+		do script "scrcpy --display-id $display_id"	
+end tell
+EOF
    		echo
    		continue
-	fi	
+	fi
+
+	if [ "$curNum" == "sdk-global" ]; then
+   		adb -s $connect_device push  $current_file_path/sdk_global.json /sdcard/Android/data/com.xreal.evapro.nebula/files/ 
+   		echo
+   		continue
+	fi
+
 
 	if [ "$curNum" == "top" ]; then
-   		echo 'tell application "Terminal" to do script "adb shell top "' > open_terminal.scpt
-		osascript open_terminal.scpt
-		rm open_terminal.scpt
+   		osascript <<EOF
+tell application "Terminal"	
+		do script "adb -s $connect_device shell top"	
+end tell
+EOF
    		echo
    		continue
 	fi

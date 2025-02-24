@@ -1,0 +1,12 @@
+{
+	"sdk" : 
+	{
+		"log_level" :"1"
+	},
+	"util": {
+        "log_level": "1"
+    },
+    "driver" : {
+        "log_level": "1"
+    }
+}
