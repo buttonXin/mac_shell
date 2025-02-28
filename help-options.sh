@@ -52,13 +52,13 @@ func_help_desc(){
 	p 	:新开窗口执行 getprop
 	pid	:获取当前包名的所有进程号
 	r 	:执行 readLog.sh 脚本, 读取Log文件并进行过滤;
-	s 	:执行 scrcpy 脚本
-	sid	:执行 scrcpy 脚本 需要传入display对应的id , 不输入回车默认为0
+	s 	:执行 scrcpy 脚本,并且可以选择不同的id
 	sdk-global	:将sdk的trace日志push到myGlasses的应用中
 	top	:执行 adb shell top 在新的窗口.
 	v	:version 输入包名查看当前应用的versionCode和versionName
 	"""
 }
+# 已过时	sid	:执行 scrcpy 脚本 需要传入display对应的id , 不输入回车默认为0
 
 func_help_desc
 
@@ -231,28 +231,31 @@ EOF
 	fi		
 
 	if [ "$curNum" == "s" ]; then
-   		echo 'tell application "Terminal" to do script "scrcpy"' > open_terminal.scpt
-		osascript open_terminal.scpt
-		rm open_terminal.scpt
+		sh $current_file_path/scrcpy_shell.sh
+
+   		# echo 'tell application "Terminal" to do script "scrcpy"' > open_terminal.scpt
+		# osascript open_terminal.scpt
+		# rm open_terminal.scpt
    		echo
    		continue
 	fi
 
-	if [ "$curNum" == "sid" ]; then 
-		read -p "请输入display id (回车默认为0) :" display_id 
-		# 如果 display_id 为空，设置为默认值 0
-		if [ -z "$display_id" ]; then
-    		display_id=0
-		fi
-		# 每一行只能这样操作,否则命令行不识别次操作.
-   		osascript <<EOF
-tell application "Terminal"	
-		do script "scrcpy --display-id $display_id"	
-end tell
-EOF
-   		echo
-   		continue
-	fi
+# 上面的scrcpy_shell.sh脚本已经操作了
+# 	if [ "$curNum" == "sid" ]; then 
+# 		read -p "请输入display id (回车默认为0) :" display_id 
+# 		# 如果 display_id 为空，设置为默认值 0
+# 		if [ -z "$display_id" ]; then
+#     		display_id=0
+# 		fi
+# 		# 每一行只能这样操作,否则命令行不识别次操作.
+#    		osascript <<EOF
+# tell application "Terminal"	
+# 		do script "scrcpy --display-id $display_id"	
+# end tell
+# EOF
+#    		echo
+#    		continue
+# 	fi
 
 	if [ "$curNum" == "sdk-global" ]; then
    		adb -s $connect_device push  $current_file_path/sdk_global.json /sdcard/Android/data/com.xreal.evapro.nebula/files/ 
