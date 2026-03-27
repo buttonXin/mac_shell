@@ -11,9 +11,53 @@ catch_ctrl_c(){
 
 catch_ctrl_c
 
-echo "将文件拖入命令行后回车:"    
-# 把键盘输入放入变量               
-read -e file_path    
+# 定义目标目录和默认文件匹配规则
+DOWNLOAD_DIR="/Users/nreal/Downloads"
+DEFAULT_FILE=""
+
+# 自动获取Downloads下的第一个文件（优先.log后缀）
+# 定义目标目录
+DOWNLOAD_DIR="/Users/nreal/Downloads"
+latest_file=""
+
+# 获取目录下最新的普通文件（跳过文件夹，按修改时间倒序）
+get_latest_file() {
+    # 遍历目录下所有条目，过滤出文件，按修改时间倒序，取第一个
+	 # 找最新的“文件”（排除目录）
+	 latest_file=$(find "$DOWNLOAD_DIR" -maxdepth 1 -type f -exec stat -f "%SB %N" -t "%Y%m%d%H%M%S" {} \; \
+        | sort -r \
+        | head -n 1 \
+        | cut -d' ' -f2-)
+    # latest_file=$(find "$DOWNLOAD_DIR" -type f -maxdepth 1 -print0 | xargs -0 ls -t | head -n 1)
+    # 处理空值（目录无文件时）
+    if [ "$latest_file" = "" ] || [ "$latest_file" = "$DOWNLOAD_DIR" ]; then
+        latest_file=""
+    fi
+}
+
+# 执行获取最新文件
+get_latest_file
+
+# 构建提示文案
+if [ -n "$latest_file" ]; then
+    echo "将文件拖入命令行后回车 \n或 直接回车读取文件：${latest_file}"
+else
+    echo "将文件拖入命令行后回车"
+fi
+
+# 提示用户输入文件路径
+echo  "$PROMPT_TEXT"
+read  file_path
+
+# 处理用户输入（空则使用默认文件）
+if [ -z "$file_path" ]; then
+    if [ -z "$latest_file" ]; then
+        echo -e "\n错误：未输入文件路径，且${DOWNLOAD_DIR}下无可用文件"
+        exit 1
+    fi
+    file_path="$latest_file"
+    echo -e "使用自动检测的文件：$file_path"
+fi
 
 
 # 检查文件是否存在
@@ -54,7 +98,7 @@ if [  -d "$folder_path/temp_log" ]; then
     rm -r "$folder_path/temp_log"
 fi
 
-string_tips="输入内容,规则 使用 | 分离,如 14532|flutter ;\n e 退出 / 任何过程中执行 (command + c 停止当前脚本); r 重新拖入文件."
+string_tips="输入内容,规则 使用 | 分离,如 14532|flutter ;\n e 退出 / 任何过程中执行 (command + c 停止当前脚本); r 重新拖入文件; o打开文件"
 
 echo  "$string_tips"
 while  read -e filter_name ; do

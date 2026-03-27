@@ -5,6 +5,10 @@ echo "-----start connect-----"
 adb devices
 
 
+timeout() {
+  perl -e 'alarm shift @ARGV; exec @ARGV' "$@"
+}
+
 
 func(){
     adb -d tcpip 5555
@@ -42,7 +46,11 @@ for ip in "${ips[@]}"; do
         continue
     fi
     echo "current ip =$ip , start connect"
-    adb connect $ip:5555
+
+    timeout 3 adb connect $ip:5555
+    if [ $? -eq 124 ]; then
+        echo "connect timeout, skipped"
+    fi
     echo
 done
 
@@ -55,3 +63,4 @@ adb connect $IP_ADDRESS:5555
 adb devices
 
 echo "如果都没有连接成功,请查看手机与电脑是否在同一网关里"
+

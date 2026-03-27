@@ -15,7 +15,9 @@ func_device(){
 	then
 		connect_device=${array[1]}
 		current_brand_info=$(adb -s "$connect_device" shell getprop |egrep "(ro.product.name|ro.product.model|ro.product.brand|ro.boot.hardware]|market|ro.soc.model|ro.system.build.type)")
+		psn=$(adb -s "$connect_device" shell settings get system xreal_psn)
 		echo "\n设备信息:\n${current_brand_info}"
+		echo "psn=${psn}"
 		echo "\n当前连接的 device: $connect_device \n"	
 		
 		has_device=true
@@ -42,9 +44,11 @@ func_help_desc(){
 	-c 	:执行 adb logcat -c 
 	d 	:查看所有 display 的id; scrcpy --list-display ; scrcpy --display 476 显示对应的屏幕id
 	-d	:执行 disconnect
+	dglass	:删除当前设备上的MyGlasses应用
 	getlog	:获取眼镜内的log文件
 	i 	:执行 install-apk.sh 脚本, 安装apk
-	input xxx	:执行 adb shell input text/keyevent  ....
+	iall	:执行安装一堆apk
+	shell	:执行 adb shell 脚本 如 input text/keyevent  ....
 	l 	:执行 laogao_logcat.sh 脚本,读取设备里的logcat并生成文件
 	n 	:打开一个新的 Terminal 窗口
 	ncm	:打开眼镜的ncm网卡
@@ -53,9 +57,11 @@ func_help_desc(){
 	pid	:获取当前包名的所有进程号
 	r 	:执行 readLog.sh 脚本, 读取Log文件并进行过滤;
 	s 	:执行 scrcpy 脚本,并且可以选择不同的id
-	sdk-global	:将sdk的trace日志push到myGlasses的应用中
+	sdkjson	:将sdk的trace日志push到传入包名的files目录下,传入null则默认到myGlasses的应用中
+	sdkjsonr	:删除传入包名files下的trace文件
 	top	:执行 adb shell top 在新的窗口.
 	v	:version 输入包名查看当前应用的versionCode和versionName
+	wm	:wm size 1920x1080 修改display分辨率, adb shell wm reset -d 158 恢复. 修改其他display:adb shell wm size 3840x1200 -d 158 
 	"""
 }
 # 已过时	sid	:执行 scrcpy 脚本 需要传入display对应的id , 不输入回车默认为0
@@ -155,7 +161,9 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
 	fi
 
 	func_device
-	# 下面的脚本需要连接设备才能执行
+
+	# --------下面的脚本需要连接设备才能执行-----------
+
 	if [ "$has_device" == false ]; then
    		continue
 	fi
@@ -186,7 +194,14 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
 	fi
 
 	if [ "$curNum" == "-d" ]; then
-   		echo  " disconnect -->\n$(adb disconnect)" 
+   		echo  " disconnect -->\n$(adb -d disconnect)" 
+		echo  " disconnect -->\n$(adb -s "$connect_device" disconnect)" 
+   		echo
+   		continue
+	fi	
+
+	if [ "$curNum" == "dglass" ]; then
+		echo  " delete MyGlasses  -->$(adb -s "$connect_device" uninstall --user 0 com.xreal.evapro.nebula )" 
    		echo
    		continue
 	fi	
@@ -197,8 +212,16 @@ while  read -e -p "查看说明输入0,请输入:" curNum ; do
    		continue
 	fi
 
-	if [[ "$curNum" == *input* ]]; then
-   		adb -s "$connect_device" shell  "$curNum"
+	if [ "$curNum" == "iall" ]; then
+   		sh $current_file_path/install-apk-all.sh
+   		echo
+   		continue
+	fi
+
+	if [[ "$curNum" == "shell" ]]; then
+		echo "adb shell "      
+		read -e shellContent 
+   		adb -s "$connect_device" shell  "$shellContent"
    		echo
    		continue
 	fi	
@@ -257,8 +280,21 @@ EOF
 #    		continue
 # 	fi
 
-	if [ "$curNum" == "sdk-global" ]; then
-   		adb -s $connect_device push  $current_file_path/sdk_global.json /sdcard/Android/data/com.xreal.evapro.nebula/files/ 
+	if [ "$curNum" == "sdkjson" ]; then
+		echo "请输入包名:  不输入默认 我的眼镜的包名(com.xreal.evapro.nebula) "      
+		read -e pkg_name 
+		adb -s $connect_device shell "mkdir /sdcard/Android/data/$pkg_name/files/"
+   		adb -s $connect_device push  $current_file_path/sdk_global.json /sdcard/Android/data/$pkg_name/files/ 
+   		echo
+   		continue
+	fi
+
+	if [ "$curNum" == "sdkjsonr" ]; then
+		echo "请输入包名:  不输入默认 我的眼镜的包名(com.xreal.evapro.nebula) "      
+		read -e pkg_name 
+		echo "当前files下的文件:\n$(adb -s $connect_device shell ls /sdcard/Android/data/$pkg_name/files/)"
+		adb -s $connect_device shell rm /sdcard/Android/data/$pkg_name/files/sdk_global.json
+		echo "\n删除后files下的文件:\n$(adb -s $connect_device shell ls /sdcard/Android/data/$pkg_name/files/)"
    		echo
    		continue
 	fi

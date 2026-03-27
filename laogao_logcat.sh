@@ -133,7 +133,7 @@ handle_log_file(){
 
 	trap "echo '检测到 SIGINT, 退出脚本'; exit 0" SIGINT
 	
-	echo "\nAgain Enter 过滤规则 使用 | 分离,如 14532|flutter ; \n输入 e / exit 则退出当前脚本"
+	echo "\nAgain Enter 过滤规则 使用 | 分离,如 14532|flutter ; \n输入 e / exit 则退出当前脚本; o 打开文件"
 	while  read -e filter_name ; do
 		#statements
 
@@ -144,6 +144,12 @@ handle_log_file(){
 			exit
 		fi
 		
+		if [ "$output_name" == "r" ]; then
+			sh $folder_path/readLog.sh
+			echo
+			exit
+		fi
+
 		# 打开当前文件所在的文件夹
 		if [[ "$output_name" == "open" ]] || [[ "$output_name" == "o" ]]; then
 			# 检查文件夹是否存在 ,进行删除

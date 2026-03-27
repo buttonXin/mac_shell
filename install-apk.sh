@@ -179,7 +179,7 @@ fi
 
 
 
-if [[ "$final_file_path" == *.apk* ]]; then
+if [[ "$final_file_path" == *.apk || "$final_file_path" == *.APK ]]; then
     echo  
 else
     echo "请使用 .apk 的安装包"
