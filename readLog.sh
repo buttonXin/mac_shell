@@ -11,9 +11,6 @@ catch_ctrl_c(){
 
 catch_ctrl_c
 
-# 定义目标目录和默认文件匹配规则
-DOWNLOAD_DIR="/Users/nreal/Downloads"
-DEFAULT_FILE=""
 
 # 自动获取Downloads下的第一个文件（优先.log后缀）
 # 定义目标目录
@@ -22,6 +19,14 @@ latest_file=""
 
 # 获取目录下最新的普通文件（跳过文件夹，按修改时间倒序）
 get_latest_file() {
+
+	# latest_file=$(find "$DOWNLOAD_DIR" -maxdepth 1 -type f -print0 \
+    #     | xargs -0 ls -t 2>/dev/null \
+    #     | head -n 1)
+    # if [ -z "$latest_file" ]; then
+    #     latest_file=""
+    # fi
+
     # 遍历目录下所有条目，过滤出文件，按修改时间倒序，取第一个
 	 # 找最新的“文件”（排除目录）
 	 latest_file=$(find "$DOWNLOAD_DIR" -maxdepth 1 -type f -exec stat -f "%SB %N" -t "%Y%m%d%H%M%S" {} \; \
@@ -46,7 +51,6 @@ else
 fi
 
 # 提示用户输入文件路径
-echo  "$PROMPT_TEXT"
 read  file_path
 
 # 处理用户输入（空则使用默认文件）
@@ -66,7 +70,7 @@ if [ ! -f "$file_path" ]; then
 	exit
 fi
 
-file_format=$(file -I $file_path)
+file_format=$(file -I "$file_path")
 
 # 获取传入文件的当前文件名称
 file_name=$(basename "$file_path")
@@ -76,14 +80,14 @@ folder_path=$(dirname "$file_path")
 # 如果是utf-16le 的文件, 则转成 utf-8
 if [[ "$file_format" == *utf-16* ]]; then
    	echo "需要转换文件: $file_format"
-   	iconv  -f UTF-16LE -t UTF-8 ${file_path} > "${folder_path}/conv-utf-8-${file_name}"
+   	iconv  -f UTF-16LE -t UTF-8 "${file_path}" > "${folder_path}/conv-utf-8-${file_name}"
    	file_path="${folder_path}/conv-utf-8-${file_name}"
 fi
 
 
 only_path=true 
 
-egrep -i "(Myglasses)" $file_path > ${file_path%/*}/Myglasses
+egrep -i "(Myglasses)" "$file_path" > "${file_path%/*}/Myglasses"
 # 抽离字符串（将/ 前的str全部保留） {file_path%/*}
 # 打开对应的app
 open -a "Visual Studio Code" "${file_path%/*}/Myglasses"
@@ -117,7 +121,7 @@ while  read -e filter_name ; do
    		exit
 	fi
 
-	if ($only_path); then
+	if [ "$only_path" = "true" ]; then
    		open -a "Visual Studio Code" "$file_path"
 	fi
 
@@ -151,84 +155,13 @@ while  read -e filter_name ; do
 	
 	output_name2=`echo $output_name | sed 's/[^a-zA-Z0-9]//g'`
 	echo "output_name2= $output_name2"
-	egrep -i "($filter_name)" $file_path > ${file_path%/*}/$output_name2
+	egrep -i "($filter_name)" "$file_path" > "${file_path%/*}/$output_name2"
 	# 抽离字符串（将/ 前的str全部保留） {file_path%/*}
 	# 打开对应的app
 	open -a "Visual Studio Code" "${file_path%/*}/$output_name2"
 	echo  "$string_tips"
 	
 done
-
-#第三版
-#echo -n "Again Enter 过滤规则 使用 | 分离,如 14532|flutter:"
-#while  read filter_name && read output_name; do
-#	#statements
-#	if [[ ! -n "$output_name" ]]; then
-#    	echo "output_name is empty"
-#    	output_name=go
-#	fi
-#
-#	echo "output_name= $output_name"
-#	egrep -i "($filter_name)" $file_path > ${file_path%/*}/$output_name
-#	# 抽离字符串（将/ 前的str全部保留） {file_path%/*}
-#	# 打开对应的app
-#	open -a "sublime text" ${file_path%/*}/$output_name
-#	echo -n "Again Enter 过滤规则 使用 | 分离,如 14532|flutter:"
-#done
-                            
-# 第二版
-# 参数-n的作用是不换行，echo默认换行
-#echo -n "拖入文件:"    
-# 把键盘输入放入变量               
-#read  file_path    
-
-#echo -n "Enter 过滤规则 使用 | 分离,如 14532|flutter:"
-#read  filter_name
-
-#egrep -i "($filter_name)" $file_path > ${file_path%/*}/go
-
-# 抽离字符串（将/ 前的str全部保留） {file_path%/*}
-
-# 打开对应的app
-#open -a "sublime text" ${file_path%/*}/go
-
-# 再次使用过滤规则
-#echo -n "Again Enter 过滤规则 使用 | 分离,如 14532|flutter:"
-#read  filter_name
-
-#egrep -i "($filter_name)" $file_path > ${file_path%/*}/go
-
-# 抽离字符串（将/ 前的str全部保留） {file_path%/*}
-
-# 打开对应的app
-#open -a "sublime text" ${file_path%/*}/go
-
-# echo ${file_path%/*}/go
-# 返回一个零退出状态，退出shell程序
-# exit 0  
-
-
-
-## !/bin/bash                                 # 指定shell类型
-# 第一版
-## 参数-n的作用是不换行，echo默认换行
-#echo -n "拖入文件:"    
-## 把键盘输入放入变量               
-#read  file_path    
-#
-#echo -n "Enter 过滤规则 使用 | 分离,如 14532|flutter:"
-#read  filter_name
-#
-#egrep -i "($filter_name)" $file_path > ${file_path%/*}/go
-#
-## 抽离字符串（将/ 前的str全部保留） {file_path%/*}
-#
-## 打开对应的app
-#open -a "sublime text" ${file_path%/*}/go
-#
-## echo ${file_path%/*}/go
-## 返回一个零退出状态，退出shell程序
-#exit 0  
 
 
 
