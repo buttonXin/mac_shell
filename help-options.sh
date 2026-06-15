@@ -35,7 +35,8 @@ func_device
 func_help_desc(){
 	echo """
 	请输入\n
-	0 	:再次查看说明;
+	0/h 	:再次查看说明;
+	16	:查看应用的so是否是16kb;拖入apk后, 会显示 2**12 和2**14
 	a 	:执行 apk-parse.sh 脚本, 打开解析apk的应用
 	am 	:adb启动应用的说明,启动到指定的display;
 	c 	:执行 connect.sh 脚本, 读取ifconfig连接设备
@@ -87,8 +88,15 @@ current_file_path=$(dirname $0)
 
 while  read -e -p "查看说明输入0,请输入:" curNum ; do
 
-	if [ "$curNum" == "0" ]; then
+	if [[ "$curNum" == "0" ]] || [[ "$curNum" == "h" ]]; then
    		func_help_desc
+   		continue
+	fi
+
+	if [ "$curNum" == "16" ]; then
+   		echo "请拖入apk文件: 查看 2**12 / 2**14"      
+		read -e apk 
+		sh $current_file_path/check_elf_alignment.sh "$apk"
    		continue
 	fi
 
